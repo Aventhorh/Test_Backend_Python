@@ -1,5 +1,5 @@
 import unittest
-from main import app
+from services.UserService import app
 
 class MainTest(unittest.TestCase):
 
