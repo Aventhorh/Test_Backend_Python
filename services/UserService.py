@@ -1,16 +1,10 @@
-from flask import Flask, request, jsonify
-from User import db, User
-from flask_migrate import Migrate
-
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db.init_app(app)
-migrate = Migrate(app, db)
-
-@app.route('/')
-def hello_world():
-    return 'Hello, World!'
+from flask import request, jsonify
+from models.User import db, User
+from services import app
+from modules.calculate_email_domain_ratio import calculate_email_domain_ratio
+from modules.count_recent_users import count_recent_users
+from modules.format_top_users import format_top_users
+from modules.get_top_users import get_top_users
 
 @app.route('/users', methods=['POST'])
 def create_user() -> tuple:
@@ -114,7 +108,23 @@ def get_users() -> tuple:
         result.append(user_data)
     return jsonify(result), 200
 
-if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True, port=4000)
+@app.route('/stats', methods=['GET'])
+def get_user_stats() -> tuple:
+    """
+    Get user statistics.
+
+    Returns:
+        tuple: A tuple containing the response JSON data and the HTTP status code.
+    """
+    recent_users_count = count_recent_users()
+    top_users = get_top_users()
+    domain = 'example.com'
+    email_domain_ratio = calculate_email_domain_ratio(domain)
+
+    stats_data = {
+        'recent_users_count': recent_users_count,
+        'top_users': format_top_users(top_users),
+        'email_domain_ratio': email_domain_ratio
+    }
+
+    return jsonify(stats_data), 200
